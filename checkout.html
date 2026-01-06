@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout SnackMania - Kirim WA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background-color: #f4f4f4; padding: 100px 8% 50px; }
+        header { 
+            background: #fff; padding: 15px 8%; display: flex; 
+            justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: fixed; width: 100%; top: 0; z-index: 1000;
+        }
+        .logo { font-size: 24px; font-weight: bold; color: #e67e22; text-decoration: none; }
+        .logo span { color: #2c3e50; }
+        .checkout-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        h2 { margin-bottom: 20px; color: #2c3e50; border-bottom: 2px solid #e67e22; display: inline-block; font-size: 18px; }
+        input, select, textarea { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
+        .item-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+        .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 18px; color: #e67e22; margin-top: 20px; }
+        .btn-wa { width: 100%; background: #25d366; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; transition: 0.3s; }
+        .btn-wa:hover { background: #128c7e; transform: translateY(-2px); }
+        @media (max-width: 768px) { .checkout-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="logo">Snack<span>Mania</span></a>
+        <a href="index.html" style="text-decoration:none; color:#333;">← Kembali</a>
+    </header>
+
+    <div class="checkout-grid">
+        <div class="card">
+            <h2>Data Pengiriman</h2>
+            <form id="formCheckout">
+                <input type="text" id="nama" placeholder="Nama Lengkap" required>
+                <input type="text" id="whatsapp" placeholder="Nomor WA Anda" required>
+                <textarea id="alamat" placeholder="Alamat Lengkap" rows="3" required></textarea>
+                <select id="kurir" required>
+                    <option value="JNE">JNE</option>
+                    <option value="GoSend">GoSend</option>
+                    <option value="GrabExpress">GrabExpress</option>
+                </select>
+                <select id="pembayaran" required>
+                    <option value="Transfer BCA">Transfer BCA</option>
+                    <option value="DANA">DANA</option>
+                    <option value="OVO">OVO</option>
+                </select>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Ringkasan Belanja</h2>
+            <div id="list-pesanan"></div>
+            <div class="total-row">
+                <span>Total:</span>
+                <span id="total-harga">Rp 0</span>
+            </div>
+            <button type="submit" form="formCheckout" id="submitBtn" class="btn-wa">KONFIRMASI VIA WHATSAPP</button>
+        </div>
+    </div>
+
+    <script>
+        let keranjang = JSON.parse(localStorage.getItem('keranjangSnack')) || [];
+
+        function tampilkanPesanan() {
+            const wadah = document.getElementById('list-pesanan');
+            const totalElement = document.getElementById('total-harga');
+            let total = 0;
+            if (keranjang.length === 0) {
+                wadah.innerHTML = "<p style='text-align:center; color:#999;'>Keranjang kosong.</p>";
+                return;
+            }
+            wadah.innerHTML = "";
+            keranjang.forEach(item => {
+                const sub = item.harga * item.jumlah;
+                total += sub;
+                wadah.innerHTML += `<div class="item-row"><span>${item.nama} (x${item.jumlah})</span><span>Rp ${sub.toLocaleString()}</span></div>`;
+            });
+            totalElement.innerText = "Rp " + total.toLocaleString();
+        }
+
+        document.getElementById('formCheckout').onsubmit = function(e) {
+            e.preventDefault();
+            if (keranjang.length === 0) { alert("Keranjang kosong!"); return; }
+
+            // Loading state
+            const btn = document.getElementById('submitBtn');
+            btn.innerText = "Menghubungkan ke WhatsApp...";
+            btn.style.background = "#999";
+
+            const nama = document.getElementById('nama').value;
+            const waCust = document.getElementById('whatsapp').value;
+            const alamat = document.getElementById('alamat').value;
+            const kurir = document.getElementById('kurir').value;
+            const bayar = document.getElementById('pembayaran').value;
+
+            let produkTeks = "";
+            let totalAkhir = 0;
+            keranjang.forEach((item, i) => {
+                const s = item.harga * item.jumlah;
+                totalAkhir += s;
+                produkTeks += `${i+1}. ${item.nama} (${item.jumlah}x) = Rp ${s.toLocaleString()}\n`;
+            });
+
+            // NOMOR TUJUAN
+            const nomorTujuan = "6283831288229"; 
+            
+            // Format Pesan
+            const pesan = `*ORDER SNACKMANIA*\n\n` +
+                          `*Nama:* ${nama}\n` +
+                          `*No WA:* ${waCust}\n` +
+                          `*Alamat:* ${alamat}\n` +
+                          `*Kurir:* ${kurir}\n` +
+                          `*Bayar:* ${bayar}\n\n` +
+                          `*Daftar Pesanan:*\n${produkTeks}\n` +
+                          `*TOTAL: Rp ${totalAkhir.toLocaleString()}*\n\n` +
+                          `Terima kasih!`;
+
+            // Perbaikan Link WA agar tidak error
+            const linkWA = "https://wa.me/" + nomorTujuan + "?text=" + encodeURIComponent(pesan);
+            
+            // Hapus keranjang setelah data diambil
+            localStorage.removeItem('keranjangSnack'); 
+            
+            // Pindah halaman
+            setTimeout(() => {
+                window.location.href = linkWA;
+            }, 800);
+        };
+
+        window.onload = tampilkanPesanan;
+    </script>
+</body>
+</html>
